@@ -1,18 +1,25 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generic, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, Tuple, TypeVar, Union
 
 
 ReturnType = TypeVar("ReturnType")
 
 
 @dataclass
-class Thunk(Generic[ReturnType]):
+class TailCall:
     args: Tuple[Any, ...] = field(default_factory=tuple)
     kwargs: Dict[str, Any] = field(default_factory=dict)
-    return_val: Optional[ReturnType] = None
 
 
-def tco(fn: Callable[..., Thunk[ReturnType]]) -> Callable[..., ReturnType]:
+@dataclass
+class Return(Generic[ReturnType]):
+    return_val: ReturnType
+
+
+Thunk = Union[TailCall, Return[ReturnType]]
+
+
+def tco(fn: Callable[..., Thunk]) -> Callable[..., ReturnType]:
     """Annotating a tail-recursive function `fn` with this decorator allows
     tail-call optimization. When the function wants to make a recursive call,
     it returns a Thunk with a tuple of positional arguments, a dictionary of
@@ -31,9 +38,10 @@ def tco(fn: Callable[..., Thunk[ReturnType]]) -> Callable[..., ReturnType]:
 
     def inner(*args, **kwargs) -> ReturnType:
         result = fn(*args, **kwargs)
-        while result.return_val is None:
+        while isinstance(result, TailCall):
             result = fn(*result.args, **result.kwargs)
-        return result.return_val
+        else:
+            return result.return_val
 
     return inner
 
@@ -41,11 +49,11 @@ def tco(fn: Callable[..., Thunk[ReturnType]]) -> Callable[..., ReturnType]:
 if __name__ == "__main__":
     # examples
     @tco
-    def factorial(n: int, acc: int = 1) -> Thunk[int]:
+    def factorial(n: int, acc: int = 1) -> Thunk:
         if n == 0:
-            return Thunk(return_val=acc)
+            return Return(acc)
         else:
-            return Thunk((n - 1, n * acc))
+            return TailCall((n - 1, n * acc))
 
     actual = list(map(factorial, range(10)))
     expected = [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
@@ -53,11 +61,11 @@ if __name__ == "__main__":
     assert factorial(10000) is not None
 
     @tco
-    def fibonacci(n: int, cur: int = 1, nxt: int = 1) -> Thunk[int]:
+    def fibonacci(n: int, cur: int = 1, nxt: int = 1) -> Thunk:
         if n == 0:
-            return Thunk(return_val=cur)
+            return Return(cur)
         else:
-            return Thunk((n - 1, nxt, cur + nxt))
+            return TailCall((n - 1, nxt, cur + nxt))
 
     actual = list(map(fibonacci, range(10)))
     expected = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
