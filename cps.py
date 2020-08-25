@@ -1,6 +1,7 @@
 from typing import *
 from dataclasses import dataclass
 
+
 def safe_floor(a: int, b: int) -> Optional[int]:
     if b == 0:
         print("Division by zero")
@@ -8,25 +9,33 @@ def safe_floor(a: int, b: int) -> Optional[int]:
     else:
         return a // b
 
+
 def safe_floor2(a: int, b: int):
     def inner(ok, err):
         if b == 0:
             return err("Division by zero")
         else:
             return ok(a // b)
+
     return inner
+
 
 T = TypeVar("T")
 E = TypeVar("E")
+
+
 @dataclass
 class Ok(Generic[T]):
     val: T
+
 
 @dataclass
 class Err(Generic[E]):
     err: E
 
+
 Result = Union[Ok[T], Err[E]]
+
 
 def cps_result(fn: Callable[..., Result[T, E]]):
     def inner(*args, **kwargs) -> Optional[T]:
@@ -36,7 +45,9 @@ def cps_result(fn: Callable[..., Result[T, E]]):
         else:
             print(result.err)
             return None
+
     return inner
+
 
 @cps_result
 def safe_floor3(a: int, b: int) -> Result[int, str]:
