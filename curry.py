@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import *
 
 ReturnType = TypeVar("ReturnType")
@@ -93,3 +94,81 @@ class Partial(Generic[ReturnType]):
 
     def __repr__(self):
         return f"Partial({self.fn}, args={self.args}, kwargs={self.kwargs})"
+
+
+def curry2(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[ReturnType]]:
+    """Curries the decorated function. Instead of having to provide all arguments
+    at once, they can be provided one or a few at a time. Once at least `num_args`
+    arguments are provided, the wrapped function will be called. The doctests below
+    best illustrate its use.
+
+    >>> @curry2(num_args=3)
+    ... def add(a, b, c):
+    ...     return a + b + c
+    >>> add5 = add(5)
+    >>> add7 = add5(2)
+
+    You can still call the function without currying.
+    >>> add(1, 2, 3)
+    6
+
+    This is not "real" currying, but it allows passing more complex state,
+    so I'd say this is in the spirit of currying and should be legal.
+    >>> add5(4, 3)
+    12
+    >>> add(1)(2, 3)
+    6
+    >>> add(1, 2)(3)
+    6
+
+    Strict currying:
+    >>> add5(4)(3)
+    12
+    >>> add7(2)
+    9
+    >>> add(1)(2)(3)
+    6
+
+    It is okay to have some default arguments. Notice that the wrapped function
+    `make_email` takes up to three arguments, but gets called when at least two
+    are provided.
+    >>> @curry2(num_args=2)
+    ... def make_email(username, domain, separator="@"):
+    ...     return username + separator + domain
+    >>> make_gmail = make_email(domain="gmail.com")
+    >>> make_gmail("haskell")
+    'haskell@gmail.com'
+    >>> make_gmail(username="curry")
+    'curry@gmail.com'
+    >>> make_gmail("curry", separator=">>=")
+    'curry>>=gmail.com'
+    >>> make_email("haskell", "curry.com")
+    'haskell@curry.com'
+    >>> make_email("haskell")("curry.com", ">>=")
+    'haskell>>=curry.com'
+
+    Parameters
+    ----------
+    num_args    number of arguments to wait for before evaluating wrapped function
+
+    Returns
+    -------
+    a decorator that curries a function
+    """
+
+    def currier(fn: Callable[..., ReturnType]):
+        def init(*args, **kwargs):
+            def call(*cargs, **ckwargs):
+                all_args = args + cargs
+                all_kwargs = kwargs.copy()
+                all_kwargs.update(ckwargs)
+                if len(all_args) + len(all_kwargs) >= num_args:
+                    return fn(*all_args, **all_kwargs)
+                else:
+                    return init(*all_args, **all_kwargs)
+
+            return call
+        
+        return init()
+
+    return currier
