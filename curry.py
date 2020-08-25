@@ -10,6 +10,11 @@ def curry(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[Return
     arguments are provided, the wrapped function will be called. The doctests below
     best illustrate its use.
 
+    The decorator returns a `Partial` object, which represents a partial application
+    of `fn`. This object is callable. It stores the arguments provided thus far, and
+    after receiving at least `num_args` arguments, it calls `fn`, otherwise it returns
+    another `Partial` object representing the partial progress made.
+
     >>> @curry(num_args=3)
     ... def add(a, b, c):
     ...     return a + b + c
@@ -96,13 +101,18 @@ class Partial(Generic[ReturnType]):
         return f"Partial({self.fn}, args={self.args}, kwargs={self.kwargs})"
 
 
-def curry2(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[ReturnType]]:
+def curry_functional(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[ReturnType]]:
     """Curries the decorated function. Instead of having to provide all arguments
     at once, they can be provided one or a few at a time. Once at least `num_args`
     arguments are provided, the wrapped function will be called. The doctests below
     best illustrate its use.
 
-    >>> @curry2(num_args=3)
+    This is a purely functional implementation, not relying on any user-defined
+    classes. This fundamentally does the same thing as the implementation with
+    `Partial`, and I deliberately named the private functions `init` and `call`
+    to highlight their similarities to `Partial.__init__` and `Partial.__call__`.
+
+    >>> @curry_functional(num_args=3)
     ... def add(a, b, c):
     ...     return a + b + c
     >>> add5 = add(5)
@@ -132,7 +142,7 @@ def curry2(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[Retur
     It is okay to have some default arguments. Notice that the wrapped function
     `make_email` takes up to three arguments, but gets called when at least two
     are provided.
-    >>> @curry2(num_args=2)
+    >>> @curry_functional(num_args=2)
     ... def make_email(username, domain, separator="@"):
     ...     return username + separator + domain
     >>> make_gmail = make_email(domain="gmail.com")
@@ -160,8 +170,7 @@ def curry2(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[Retur
         def init(*args, **kwargs):
             def call(*cargs, **ckwargs):
                 all_args = args + cargs
-                all_kwargs = kwargs.copy()
-                all_kwargs.update(ckwargs)
+                all_kwargs = {**kwargs, **ckwargs}
                 if len(all_args) + len(all_kwargs) >= num_args:
                     return fn(*all_args, **all_kwargs)
                 else:
