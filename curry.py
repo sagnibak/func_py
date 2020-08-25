@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import *
+from typing import Callable, Generic, TypeVar, Union
 
 ReturnType = TypeVar("ReturnType")
 
@@ -101,7 +101,7 @@ class Partial(Generic[ReturnType]):
         return f"Partial({self.fn}, args={self.args}, kwargs={self.kwargs})"
 
 
-def curry_functional(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[ReturnType]]:
+def curry_functional(num_args: int):
     """Curries the decorated function. Instead of having to provide all arguments
     at once, they can be provided one or a few at a time. Once at least `num_args`
     arguments are provided, the wrapped function will be called. The doctests below
@@ -177,7 +177,7 @@ def curry_functional(num_args: int) -> Callable[[Callable[..., ReturnType]], Par
                     return init(*all_args, **all_kwargs)
 
             return call
-        
+
         return init()
 
     return currier
