@@ -69,10 +69,10 @@ def curry(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[Return
     a decorator that curries a function
     """
 
-    def currier(fn: Callable[..., ReturnType]):
+    def decorator(fn: Callable[..., ReturnType]):
         return Partial(num_args, fn)
 
-    return currier
+    return decorator
 
 
 class Partial(Generic[ReturnType]):
@@ -166,7 +166,7 @@ def curry_functional(num_args: int):
     a decorator that curries a function
     """
 
-    def currier(fn: Callable[..., ReturnType]):
+    def decorator(fn: Callable[..., ReturnType]):
         def init(*args, **kwargs):
             def call(*more_args, **more_kwargs):
                 all_args = args + more_args
@@ -180,4 +180,4 @@ def curry_functional(num_args: int):
 
         return init()
 
-    return currier
+    return decorator
