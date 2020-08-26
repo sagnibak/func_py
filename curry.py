@@ -88,14 +88,14 @@ class Partial(Generic[ReturnType]):
         self.args = args
         self.kwargs = kwargs
 
-    def __call__(self, *args, **kwargs) -> Union[Partial[ReturnType], ReturnType]:
-        child_kwargs = self.kwargs.copy()
-        child_kwargs.update(kwargs)
-        num_args = len(self.args + args) + len(child_kwargs)
+    def __call__(self, *more_args, **more_kwargs) -> Union[Partial[ReturnType], ReturnType]:
+        all_args = self.args + more_args  # tuple addition
+        all_kwargs = dict(**self.kwargs, **more_kwargs)  # non-mutative dictionary union
+        num_args = len(all_args) + len(all_kwargs)
         if num_args >= self.num_args:
-            return self.fn(*(self.args + args), **child_kwargs)
+            return self.fn(*all_args, **all_kwargs)
         else:
-            return Partial(self.num_args, self.fn, *(self.args + args), **child_kwargs)
+            return Partial(self.num_args, self.fn, *all_args, **all_kwargs)
 
     def __repr__(self):
         return f"Partial({self.fn}, args={self.args}, kwargs={self.kwargs})"
@@ -168,9 +168,9 @@ def curry_functional(num_args: int):
 
     def currier(fn: Callable[..., ReturnType]):
         def init(*args, **kwargs):
-            def call(*cargs, **ckwargs):
-                all_args = args + cargs
-                all_kwargs = {**kwargs, **ckwargs}
+            def call(*more_args, **more_kwargs):
+                all_args = args + more_args
+                all_kwargs = dict(**kwargs, **more_kwargs)
                 if len(all_args) + len(all_kwargs) >= num_args:
                     return fn(*all_args, **all_kwargs)
                 else:
