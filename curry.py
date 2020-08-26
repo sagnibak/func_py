@@ -60,6 +60,12 @@ def curry(num_args: int) -> Callable[[Callable[..., ReturnType]], Partial[Return
     >>> make_email("haskell")("curry.com", ">>=")
     'haskell>>=curry.com'
 
+    Note that I did consider using `inspect.signature` instead of using `num_args`,
+    but I chose the latter for making my code less verbose, since my objective here
+    is to show how one can curry functions elegantly in Python, and not to write
+    a bulletproof currying function that can handle all of Python's wonders. And
+    even then I think this is a very useful and flexible function.
+
     Parameters
     ----------
     num_args    number of arguments to wait for before evaluating wrapped function
