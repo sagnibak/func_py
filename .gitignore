@@ -6,6 +6,9 @@
 **/__pycache__/
 **/.mypy_cache/
 
+# ignore the Haskell build directory
+build/
+
 # Swap
 [._]*.s[a-v][a-z]
 !*.svg  # comment out if you don't need vector files
