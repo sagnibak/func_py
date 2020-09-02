@@ -1,7 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractclassmethod, abstractmethod
+from collections.abc import Iterable
 from functools import reduce
-from typing import Callable, Generic, Iterator, TypeVar
+from typing import Any, Callable, Generic, Iterator, TypeVar
 from typing_extensions import Protocol
 
 A_co = TypeVar("A_co", covariant=True)
@@ -40,7 +41,18 @@ class Unwrappable(Protocol, Generic[A_co]):
     def unwrap(self: Unwrappable[A_co]) -> A_co:
         ...
 
-class Box(Generic[A_co]):
+class Show:
+    def __init__(self) -> None:
+        self._contents: Any  # to make the type checker happy
+    
+    def __repr__(self) -> str:
+        className = self.__class__.__name__
+        if hasattr(self, "_contents"):
+            return f"{className}({repr(self._contents)})"
+        else:
+            return f"{className}()"
+
+class Box(Show, Generic[A_co]):
     def __init__(self, contents) -> None:
         self._contents = contents
 
@@ -57,7 +69,7 @@ class Box(Generic[A_co]):
     def unwrap(self: Box[A_co]) -> A_co:
         return self._contents
 
-class List(Generic[A_co]):
+class List(Show, Generic[A_co]):
     def __init__(self, *contents) -> None:
         self._contents = list(contents)
     
@@ -86,8 +98,11 @@ class List(Generic[A_co]):
 
     def __iter__(self) -> Iterator[A_co]:
         return iter(self._contents)
+    
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(" + ", ".join(map(repr, self._contents)) + ")"
 
-class Option(ABC, Generic[A]):
+class Option(ABC, Show, Generic[A]):
     @abstractmethod
     def map(self, fn):
         raise NotImplementedError
@@ -135,7 +150,7 @@ class Nothing(Option, Generic[A]):
     def unwrap(self):
         raise TypeError("Cannot unwrap a `Nothing` since it contains...nothing!")
 
-class Result(ABC, Generic[A]):
+class Result(ABC, Show, Generic[A]):
     def __init__(self, contents):
         self._contents = contents
 
@@ -171,7 +186,7 @@ class Err(Result, Generic[A]):
     def unwrap(self: Err[A]) -> A:
         raise Exception(self._contents)
 
-class IO(Generic[A]):
+class IO(Show, Generic[A]):
     def __init__(self, contents: A) -> None:
         self._contents = contents
     
