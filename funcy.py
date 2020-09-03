@@ -187,7 +187,8 @@ class Err(Result, Generic[A]):
         raise Exception(self._contents)
 
 class IO(Show, Generic[A]):
-    def __init__(self, contents: A) -> None:
+    def __init__(self, world: Any, contents: A) -> None:
+        self.world = world
         self._contents = contents
     
     def map(self: IO[A], fn: Callable[[A,], B]) -> IO[B]:
@@ -195,7 +196,7 @@ class IO(Show, Generic[A]):
     
     @classmethod
     def of(cls, *args: A):
-        return IO(*args)
+        return IO(0, *args)
     
     def chain(self: IO[A], fn: Callable[[A,], IO[B]]) -> IO[B]:
         return fn(self._contents)
@@ -206,6 +207,17 @@ def getLine() -> IO[str]:
 
 def putStrLn(s: str) -> IO[None]:
     print(s)
+    return IO.of(None)
+
+
+def readFile(fname: str) -> IO[str]:
+    with open(fname, "r") as f:
+        lines = f.read()
+    return IO.of(lines)
+
+def writeFile(fname: str, contents: str) -> IO[None]:
+    with open(fname, "w") as f:
+        f.write(contents)
     return IO.of(None)
 
 
