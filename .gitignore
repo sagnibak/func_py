@@ -1,4 +1,5 @@
 # stupid way to handle embedded repos
+calc/
 
 # config files, temporary generated files
 .ipynb_checkpoints/
